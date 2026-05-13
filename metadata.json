@@ -1,0 +1,6 @@
+{
+  "name": "MYRA AI",
+  "description": "A futuristic premium AI Voice Assistant with a sci-fi holographic interface.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["voice_interaction", "ai_chat", "vision"]
+}
