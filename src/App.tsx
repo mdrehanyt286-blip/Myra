@@ -129,18 +129,43 @@ export default function App() {
 
     if (!selectedVoice || profile) {
       if (isHindi) {
-        selectedVoice = voices.find(v => v.lang.includes('hi') && (v.name.includes('Natural') || v.name.includes('Premium'))) ||
+        const prefGender = profile?.pref || (settings.voice.toLowerCase().includes('female') || ['Aoede', 'Kore', 'Leda', 'Zephyr'].includes(settings.voice) ? 'female' : 'male');
+        const maleTerms = ['male', 'hemant', 'ravi', 'prakash', '-b', '-c'];
+        const femaleTerms = ['female', 'kalpana', 'swara', 'ekta', '-a', '-d'];
+        
+        const isTargetGender = (v: SpeechSynthesisVoice) => {
+          const name = v.name.toLowerCase();
+          const terms = prefGender === 'male' ? maleTerms : femaleTerms;
+          return terms.some(t => name.includes(t));
+        };
+
+        selectedVoice = voices.find(v => v.lang.includes('hi') && isTargetGender(v) && (v.name.includes('Natural') || v.name.includes('Premium'))) ||
+                        voices.find(v => v.lang.includes('hi') && isTargetGender(v)) ||
+                        voices.find(v => v.lang.includes('hi') && (v.name.includes('Natural') || v.name.includes('Premium'))) ||
                         voices.find(v => v.lang.includes('hi') && v.name.includes('Google')) ||
                         voices.find(v => v.lang.includes('hi'));
       } else {
         const prefGender = profile?.pref || 'female';
+        const maleTerms = ['male', 'david', 'mark', 'james', 'guy', 'thomas', 'stefan', 'peter', 'paul', 'sam', 'harry', 'microsoft david', 'google us english male'];
+        const femaleTerms = ['female', 'zira', 'susan', 'hazel', 'aria', 'jenny', 'sonia', 'catherine', 'heather', 'linda', 'joanna', 'kalpana'];
         
+        const isTargetGender = (v: SpeechSynthesisVoice) => {
+          const name = v.name.toLowerCase();
+          const terms = prefGender === 'male' ? maleTerms : femaleTerms;
+          if (terms.some(t => name.includes(t))) return true;
+          // Fallback if no specific gender term but it's a known male/female name structure
+          if (prefGender === 'male' && (name.includes('-b') || name.includes('-c'))) return true;
+          if (prefGender === 'female' && (name.includes('-a') || name.includes('-d'))) return true;
+          return false;
+        };
+
         // High-precision "Alexa-like" selection or preference based selector
-        selectedVoice = voices.find(v => (v.name.includes('Aria') || v.name.includes('Jenny') || v.name.includes('Sonia') || v.name.includes('Zira')) && v.name.includes('Natural') && (v.name.toLowerCase().includes(prefGender))) ||
-                        voices.find(v => v.name.includes('Natural') && v.name.toLowerCase().includes(prefGender)) ||
-                        voices.find(v => v.name.includes('Premium') && v.name.toLowerCase().includes(prefGender)) ||
-                        voices.find(v => v.name.includes('Google') && v.name.toLowerCase().includes(prefGender)) ||
-                        voices.find(v => v.lang.includes('en-US') && v.name.toLowerCase().includes(prefGender)) ||
+        selectedVoice = voices.find(v => (v.name.includes('Aria') || v.name.includes('Jenny') || v.name.includes('Sonia') || v.name.includes('Zira')) && v.name.includes('Natural') && isTargetGender(v)) ||
+                        voices.find(v => v.name.includes('Natural') && isTargetGender(v)) ||
+                        voices.find(v => v.name.includes('Premium') && isTargetGender(v)) ||
+                        voices.find(v => v.name.includes('Google') && isTargetGender(v)) ||
+                        voices.find(v => v.lang.includes('en-US') && isTargetGender(v)) ||
+                        voices.find(v => isTargetGender(v)) || 
                         voices.find(v => v.lang.includes('en-US')) ||
                         voices[0];
       }
