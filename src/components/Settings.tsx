@@ -22,15 +22,17 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, settings, onSave }
   const [voices, setVoices] = React.useState<SpeechSynthesisVoice[]>([]);
 
   React.useEffect(() => {
-    const updateVoices = () => {
-      const v = window.speechSynthesis.getVoices();
-      setVoices(v);
-    };
-    updateVoices();
-    window.speechSynthesis.onvoiceschanged = updateVoices;
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null;
-    };
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      const updateVoices = () => {
+        const v = window.speechSynthesis.getVoices();
+        setVoices(v);
+      };
+      updateVoices();
+      window.speechSynthesis.onvoiceschanged = updateVoices;
+      return () => {
+        window.speechSynthesis.onvoiceschanged = null;
+      };
+    }
   }, []);
 
   const personalityModes: { id: PersonalityMode; label: string; icon: any; color: string }[] = [

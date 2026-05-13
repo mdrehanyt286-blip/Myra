@@ -9,7 +9,7 @@ export const getAIResponse = async (prompt: string, systemInstruction: string, c
   const ai = new GoogleGenAI({ apiKey });
   
   try {
-    const options: any = {
+    const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [
         ...chatHistory,
@@ -25,11 +25,9 @@ export const getAIResponse = async (prompt: string, systemInstruction: string, c
           googleSearch: {}
         }
       ]
-    };
+    });
 
-    const response = await ai.models.generateContent(options);
-
-    return response.text;
+    return response.text || "I'm speechless...";
   } catch (error) {
     console.error("Gemini API Error:", error);
     return "I'm having trouble connecting to my neural network. Please check my energy core (API key).";

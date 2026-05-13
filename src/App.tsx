@@ -25,26 +25,71 @@ const DEFAULT_SETTINGS: AppSettings = {
   apiKey: '',
 };
 
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-screen w-screen bg-black text-red-500 flex flex-col items-center justify-center p-8 text-center font-mono">
+          <h1 className="text-2xl font-bold mb-4">CRITICAL SYSTEM FAILURE</h1>
+          <p className="text-xs mb-8 opacity-70">A fatal error has occurred in the neural pathways. Resetting memory may help.</p>
+          <button 
+            onClick={() => { localStorage.clear(); window.location.reload(); }}
+            className="px-6 py-3 bg-red-600 text-white rounded-full font-bold hover:bg-red-500 transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)]"
+          >
+            PURGE LOCAL CACHE & REBOOT
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
+  );
+}
+
+function AppContent() {
   const [state, setState] = useState<AIState>('idle');
   const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('myra_settings');
-    const parsed = saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
-    // Migrate settings
-    if (parsed) {
-      if (parsed.continuousMode === undefined) parsed.continuousMode = false;
-      if (parsed.apiKey === undefined) parsed.apiKey = '';
+    try {
+      const saved = localStorage.getItem('myra_settings');
+      const parsed = saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+      // Migrate settings
+      if (parsed) {
+        if (parsed.continuousMode === undefined) parsed.continuousMode = false;
+        if (parsed.apiKey === undefined) parsed.apiKey = '';
+        if (parsed.voiceRate === undefined) parsed.voiceRate = 1.0;
+        if (parsed.voicePitch === undefined) parsed.voicePitch = 1.0;
+      }
+      return { ...DEFAULT_SETTINGS, ...parsed };
+    } catch (e) {
+      console.error("Failed to parse settings:", e);
+      return DEFAULT_SETTINGS;
     }
-    return parsed;
   });
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isOverlayActive, setIsOverlayActive] = useState(false);
   
   const recognitionRef = useRef<any>(null);
-  const synthRef = useRef<SpeechSynthesis>(window.speechSynthesis);
+  const synthRef = useRef<SpeechSynthesis | null>(typeof window !== 'undefined' ? window.speechSynthesis : null);
   const stateRef = useRef<AIState>('idle');
   const messagesRef = useRef<Message[]>([]);
+
+  useEffect(() => {
+    // Save settings whenever they change
+    localStorage.setItem('myra_settings', JSON.stringify(settings));
+  }, [settings]);
 
   useEffect(() => {
     stateRef.current = state;
@@ -56,7 +101,7 @@ export default function App() {
 
   useEffect(() => {
     // Initialize Voice Recognition once
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = typeof window !== 'undefined' ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) : null;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
@@ -82,30 +127,34 @@ export default function App() {
     }
 
     // Handle voices loading
-    const loadVoices = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0 && !settings.voice) {
-        // First initialization of default voice if none set
-        const defaultVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('en-US')) || voices[0];
-        if (defaultVoice) {
-          setSettings(s => ({ ...s, voice: defaultVoice.name }));
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0 && !settings.voice) {
+          // First initialization of default voice if none set
+          const defaultVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('en-US')) || voices[0];
+          if (defaultVoice) {
+            setSettings(s => ({ ...s, voice: defaultVoice.name }));
+          }
         }
-      }
-    };
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-    loadVoices();
+      };
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadVoices();
+    }
 
     // Cleanup on unmount
     return () => {
       if (recognitionRef.current) recognitionRef.current.abort();
-      synthRef.current.cancel();
-      window.speechSynthesis.onvoiceschanged = null;
+      if (synthRef.current) synthRef.current.cancel();
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
     };
   }, []); // Only once
 
   const speak = (text: string) => {
+    if (!synthRef.current || !text) return;
     synthRef.current.cancel();
-    if (!text) return;
     
     const utterance = new SpeechSynthesisUtterance(text);
     
@@ -305,7 +354,10 @@ export default function App() {
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600/30 blur-[100px] rounded-full translate-x-1/2 translate-y-1/2" />
       </div>
 
-      <Header onSettingsClick={() => setIsSettingsOpen(true)} />
+      <Header 
+        onSettingsClick={() => setIsSettingsOpen(true)} 
+        activeVoice={settings.voice}
+      />
 
       <main className="flex-1 flex flex-col items-center relative z-10 w-full max-w-2xl mx-auto overflow-hidden h-full">
         {/* Top Area: Orb Focus */}

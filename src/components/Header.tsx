@@ -4,9 +4,10 @@ import { motion } from 'motion/react';
 
 interface HeaderProps {
   onSettingsClick: () => void;
+  activeVoice: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
+const Header: React.FC<HeaderProps> = ({ onSettingsClick, activeVoice }) => {
   const [time, setTime] = useState(new Date());
   const [battery, setBattery] = useState(85);
   const [ram, setRam] = useState(4.2);
@@ -39,7 +40,10 @@ const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
       {/* Center: Title */}
       <div className="flex flex-col items-center">
         <h1 className="text-xl font-bold tracking-[0.2em] text-white glow-text">MYRA</h1>
-        <span className="text-[8px] tracking-[0.1em] text-red-400 font-medium">AI COMPANION</span>
+        <div className="flex items-center gap-2">
+           <span className="text-[8px] tracking-[0.1em] text-red-400 font-medium">AI COMPANION</span>
+           {activeVoice && <span className="text-[7px] text-white/30 border border-white/10 px-1 rounded uppercase font-mono">{activeVoice}</span>}
+        </div>
       </div>
 
       {/* Right: Time & Settings */}
