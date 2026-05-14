@@ -38,11 +38,15 @@ const Header: React.FC<HeaderProps> = ({ onSettingsClick, activeVoice }) => {
       </div>
 
       {/* Center: Title */}
-      <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center">
         <h1 className="text-xl font-bold tracking-[0.2em] text-white glow-text">MYRA</h1>
         <div className="flex items-center gap-2">
            <span className="text-[8px] tracking-[0.1em] text-red-400 font-medium">AI COMPANION</span>
            {activeVoice && <span className="text-[7px] text-white/30 border border-white/10 px-1 rounded uppercase font-mono">{activeVoice}</span>}
+           <div className="flex items-center gap-1">
+             <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
+             <span className="text-[6px] text-green-500/70 font-mono">NEURAL LINK</span>
+           </div>
         </div>
       </div>
 

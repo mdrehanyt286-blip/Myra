@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from 'motion/react';
 const DEFAULT_SETTINGS: AppSettings = {
   userName: 'Captain',
   personality: 'assistant',
-  model: 'gemini-3-flash',
+  model: 'gemini-1.5-flash',
   voice: 'Google US English',
   voiceRate: 1.0,
   voicePitch: 1.0,
@@ -25,36 +25,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   apiKey: '',
 };
 
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() { return { hasError: true }; }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="h-screen w-screen bg-black text-red-500 flex flex-col items-center justify-center p-8 text-center font-mono">
-          <h1 className="text-2xl font-bold mb-4">CRITICAL SYSTEM FAILURE</h1>
-          <p className="text-xs mb-8 opacity-70">A fatal error has occurred in the neural pathways. Resetting memory may help.</p>
-          <button 
-            onClick={() => { localStorage.clear(); window.location.reload(); }}
-            className="px-6 py-3 bg-red-600 text-white rounded-full font-bold hover:bg-red-500 transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)]"
-          >
-            PURGE LOCAL CACHE & REBOOT
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 export default function App() {
   return (
-    <ErrorBoundary>
-      <AppContent />
-    </ErrorBoundary>
+    <AppContent />
   );
 }
 
@@ -70,8 +43,12 @@ function AppContent() {
         if (parsed.apiKey === undefined) parsed.apiKey = '';
         if (parsed.voiceRate === undefined) parsed.voiceRate = 1.0;
         if (parsed.voicePitch === undefined) parsed.voicePitch = 1.0;
+        // Fix futuristic model name if it exists in legacy settings
+        if (parsed.model === 'gemini-3-flash' || parsed.model === 'gemini-3.1-pro') {
+          parsed.model = 'gemini-1.5-flash';
+        }
       }
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      return { ...DEFAULT_SETTINGS, ...parsed, model: parsed?.model || 'gemini-1.5-flash' };
     } catch (e) {
       console.error("Failed to parse settings:", e);
       return DEFAULT_SETTINGS;
@@ -298,7 +275,7 @@ function AppContent() {
       parts: [{ text: m.text }]
     }));
 
-    const responseText = await getAIResponse(text, getSystemInstruction(settings.personality), history, settings.apiKey);
+    const responseText = await getAIResponse(text, getSystemInstruction(settings.personality), history, settings.apiKey, settings.model);
     
     const myraMsg: Message = {
       id: `myra-${Date.now()}`,

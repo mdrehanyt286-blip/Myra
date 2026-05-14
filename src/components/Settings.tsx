@@ -110,8 +110,8 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, settings, onSave }
                    onChange={(e) => setLocalSettings({ ...localSettings, model: e.target.value })}
                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm appearance-none focus:outline-none"
                 >
-                  <option value="gemini-3-flash">Gemini 3.0 Flash (Fast)</option>
-                  <option value="gemini-3.1-pro">Gemini 3.1 Pro (Deep)</option>
+                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fast)</option>
+                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (Intelligent)</option>
                 </select>
               </div>
 
